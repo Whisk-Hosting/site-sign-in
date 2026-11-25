@@ -1,0 +1,4 @@
+steps:
+  - id: sign-everyone-out
+  - id: delete-old-visits
+  - id: warn-expiring-contractors

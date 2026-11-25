@@ -1,0 +1,37 @@
+# The live demo's manifest, used only by `npm run deploy:demo`. It is whisk.yaml with every
+# route public (src/demo.ts lets a guest in as staff), every POST from a browser challenged,
+# DEMO=1, and the nightly reset. The API is left out of the challenge, because scripts can't
+# solve one; it still needs a key, which the guest makes under Setup > Settings.
+whisk: 1
+name: visitors
+
+routes:
+  public: ["/**"]
+  challenge: ["/demo/**", "/kiosk", "/kiosk/**", "/s/**", "/i/**", "/desk/**", "/rollcall", "/rollcall/**", "/expected", "/expected/**", "/visits/**", "/visitors/**", "/setup/**"]
+
+health:
+  path: /health
+  timeout: 60
+
+database: app
+migrate: "node dist/migrate.js"
+
+storage: true
+email: true
+
+functions:
+  - name: send-message
+    event: message.send
+    graph: workflows/send-message.graph.yaml
+  - name: nightly
+    cron: "0 23 * * *"
+    tz: America/New_York
+    graph: workflows/nightly.graph.yaml
+  - name: demo-reset
+    cron: "0 3 * * *"
+    tz: America/New_York
+    graph: workflows/demo-reset.graph.yaml
+
+env:
+  LOG_LEVEL: info
+  DEMO: "1"

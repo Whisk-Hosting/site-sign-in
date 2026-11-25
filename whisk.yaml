@@ -1,0 +1,38 @@
+whisk: 1
+name: site-sign-in
+
+routes:
+  # Visitors never sign in: the kiosk, the QR poster (/s/) and the invite link (/i/) are the
+  # only public pages. The front desk, roll calls and setup need a signed-in person from the
+  # business's team. /api/v1 checks its own keys.
+  public: ["/health", "/kiosk", "/kiosk/**", "/s/**", "/i/**", "/assets/**", "/api/**"]
+  # Every step of signing in or out needs the bot challenge solved first.
+  challenge: ["/kiosk", "/kiosk/**", "/s/**", "/i/**"]
+
+health:
+  path: /health
+  timeout: 60
+
+database: app
+migrate: "node dist/migrate.js"
+
+# Photos, induction videos and contractor certificates are uploaded to storage.
+storage: true
+# Host alerts and invitations, from the business's own domain once it is verified in Whisk.
+email: true
+
+functions:
+  - name: send-message
+    event: message.send
+    graph: workflows/send-message.graph.yaml
+  # Signs out anyone still on site, deletes old visits and warns of expiring contractor
+  # papers. Set tz to where you are.
+  - name: nightly
+    cron: "0 23 * * *"
+    tz: America/New_York
+    graph: workflows/nightly.graph.yaml
+
+env:
+  LOG_LEVEL: info
+  # "1" only on the live demo (demo/whisk.yaml): see src/demo.ts.
+  DEMO: "0"
